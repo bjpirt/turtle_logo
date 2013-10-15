@@ -17,7 +17,7 @@ typedef void (* fp) (void);
 
 struct UserCmd {
   const char *cmd;
-  unsigned char type;
+  byte type;
   fp fn;
 };
 
@@ -31,9 +31,9 @@ struct RepeatStack {
   byte loops_remaining;
 };
 
-unsigned char fn_counter = 0;
+byte fn_counter = 0;
 char input_buffer[INPUT_BUFFER_LENGTH];
-unsigned char input_buffer_pos = 0;
+byte input_buffer_pos = 0;
 byte cmd_write_pos = 0;
 byte cmd_read_pos = 0;
 boolean running = false;
@@ -64,7 +64,7 @@ void processInput(){
 }
 
 // This allows you to register a callback funtion
-void addUserCmd(char* cmd, unsigned char type, void (* fn) (void)){
+void addUserCmd(char* cmd, byte type, void (* fn) (void)){
   if (fn_counter == COMMAND_COUNT) {
     Serial.println("Too many commands defined");
     return;
@@ -77,8 +77,8 @@ void addUserCmd(char* cmd, unsigned char type, void (* fn) (void)){
 
 // This is a private method which matches the command to our list of commands
 char _extractCmd(char *buffer){
-  for(unsigned char cmd = 0; cmd<COMMAND_COUNT; cmd++){
-    for(unsigned char j = 0; j < input_buffer_pos; j++){
+  for(byte cmd = 0; cmd<COMMAND_COUNT; cmd++){
+    for(byte j = 0; j < input_buffer_pos; j++){
       //compare each letter until we hit a space or the end of the string to find a match
       //Serial.println(cmd_list[cmd][j]);
       if(buffer[j] == user_cmds[cmd].cmd[j]){
@@ -99,7 +99,7 @@ int _extractIntArg(char *buffer){
   //extract everthing after the space to the end of the line and convert to an integer
   char arg[INPUT_BUFFER_LENGTH];
   char arg_pos = -1;
-  for (unsigned char i = 0; i < INPUT_BUFFER_LENGTH; i++){
+  for (byte i = 0; i < INPUT_BUFFER_LENGTH; i++){
     if(arg_pos == -1){
       if (buffer[i] == ' '){
         arg_pos++;
