@@ -4,7 +4,7 @@
 #define COMMAND_COUNT  12
 #define INPUT_BUFFER_LENGTH 20
 #define CMD_STACK_SIZE 100
-#define REPEAT_DEPTH 10
+#define SUBROUTINE_STACK_DEPTH 10
 // Define the different types of results
 #define INTEGER_TYPE    1
 #define FLOAT_TYPE      2
@@ -37,11 +37,11 @@ unsigned char input_buffer_pos = 0;
 byte cmd_write_pos = 0;
 byte cmd_read_pos = 0;
 boolean running = false;
-char repeat_pos = -1;
+char subroutine_pos = -1;
 
 UserCmd user_cmds[COMMAND_COUNT];
 Command cmd_stack[CMD_STACK_SIZE];
-RepeatStack repeat_stack[REPEAT_DEPTH];
+RepeatStack subroutine_stack[SUBROUTINE_STACK_DEPTH];
 
 
 // This gets called each loop and is responsible for kicking off any commands
@@ -66,7 +66,6 @@ void processInput(){
 // This allows you to register a callback funtion
 void addUserCmd(char* cmd, unsigned char type, void (* fn) (void)){
   if (fn_counter == COMMAND_COUNT) { return; }
-  //if(type == REPEAT_TYPE){
   user_cmds[fn_counter].cmd = cmd;
   user_cmds[fn_counter].type = type;
   user_cmds[fn_counter].fn = fn;
@@ -132,8 +131,23 @@ void processNextCmd(){
   
   if (user_cmds[cmd_stack[cmd_read_pos].cmd].type == REPEAT_TYPE) {
     // if it's a repeat, enter another level in the stack
-  } else if (user_cmds[cmd_stack[cmd_read_pos].cmd].type == REPEAT_TYPE) {
-    // if it's the end of a repeat, either loop or continue
+    subroutine_pos++;
+    if(subroutine_pos >= SUBROUTINE_STACK_DEPTH){
+      Serial.println("Too deep a stack");
+    }else{
+      subroutine_stack[subroutine_pos].pos = cmd_read_pos;
+      subroutine_stack[subroutine_pos].loops_remaining = cmd_stack[cmd_read_pos].arg - 1;
+    }
+  } else if (user_cmds[cmd_stack[cmd_read_pos].cmd].type == END_REPEAT_TYPE) {
+    // it's the end of a repeat
+    if(subroutine_stack[subroutine_pos].loops_remaining > 0){
+      // there are loops remaining so do another one
+      subroutine_stack[subroutine_pos].loops_remaining--;
+      cmd_read_pos = subroutine_stack[subroutine_pos].pos;
+    }else{
+      // we've done all of the loops so continue
+      subroutine_pos--;
+    }
   } else {
     // run the command
     ((void (*)(int))user_cmds[cmd_stack[cmd_read_pos].cmd].fn)(cmd_stack[cmd_read_pos].arg);
