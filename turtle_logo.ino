@@ -65,7 +65,10 @@ void processInput(){
 
 // This allows you to register a callback funtion
 void addUserCmd(char* cmd, unsigned char type, void (* fn) (void)){
-  if (fn_counter == COMMAND_COUNT) { return; }
+  if (fn_counter == COMMAND_COUNT) {
+    Serial.println("Too many commands defined");
+    return;
+  }
   user_cmds[fn_counter].cmd = cmd;
   user_cmds[fn_counter].type = type;
   user_cmds[fn_counter].fn = fn;
