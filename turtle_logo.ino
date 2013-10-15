@@ -265,12 +265,12 @@ void setup(){
   penDown();
   
   //add the commands
-  addUserCmd("FD", INTEGER_TYPE, (fp) &forward);
-  addUserCmd("BK", INTEGER_TYPE, (fp) &backward);
-  addUserCmd("PD", NO_TYPE, (fp) &penDown);
-  addUserCmd("PU", NO_TYPE, (fp) &penUp);
-  addUserCmd("LT", INTEGER_TYPE, (fp) &leftTurn);
-  addUserCmd("RT", INTEGER_TYPE, (fp) &rightTurn);
+  addUserCmd("FORWARD", INTEGER_TYPE, (fp) &forward);
+  addUserCmd("BACK", INTEGER_TYPE, (fp) &backward);
+  addUserCmd("PENDOWN", NO_TYPE, (fp) &penDown);
+  addUserCmd("PENUP", NO_TYPE, (fp) &penUp);
+  addUserCmd("TURNLEFT", INTEGER_TYPE, (fp) &leftTurn);
+  addUserCmd("TURNRIGHT", INTEGER_TYPE, (fp) &rightTurn);
   addUserCmd("PAUSE", NO_TYPE, (fp) &pause);
   addUserCmd("PLAY", NO_TYPE, (fp) &play);
   addUserCmd("CLEAR", NO_TYPE, (fp) &clearBuffer);
