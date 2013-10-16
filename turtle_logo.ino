@@ -149,6 +149,7 @@ void _storeCmd(char *buffer){
 }
 
 void processNextCmd(){
+  boolean moveon = true;
   if (!running) { return; }
   if (cmd_read_pos >= cmd_write_pos) { return; }
   if (cmd_write_pos == 0) { return; }
@@ -174,9 +175,9 @@ void processNextCmd(){
     }
   } else {
     // run the command
-    ((void (*)(int))user_cmds[cmd_stack[cmd_read_pos].cmd].fn)(cmd_stack[cmd_read_pos].arg);
+    moveon = ((boolean (*)(int))user_cmds[cmd_stack[cmd_read_pos].cmd].fn)(cmd_stack[cmd_read_pos].arg);
   }
-  cmd_read_pos++;
+  if(moveon) {cmd_read_pos++;};
 }
 
 /**
@@ -188,7 +189,7 @@ void release(){
   //motor2.release();
 }
 
-void move(int distance){
+boolean move(int distance){
   Serial.println("Move");
   /*
   char temp[6];
@@ -205,28 +206,31 @@ void move(int distance){
   }
   release();
   */
+  return true;
 }
 
-void forward(int distance){
-  move(distance);
+boolean forward(int distance){
+  return move(distance);
 }
 
-void backward(int distance){
-  move(-distance);
+boolean backward(int distance){
+  return move(-distance);
 }
 
-void penUp(){
+boolean penUp(){
   Serial.println("PEN UP");
   //myservo.write(135);
+  return true;
 }
 
-void penDown(){
+boolean penDown(){
   Serial.println("PEN DOWN");
   //myservo.write(45);
+  return true;
 }
 
 
-void turn(int angle){
+boolean turn(int angle){
   Serial.println("Turn");
   /*
   char temp[10];
@@ -243,32 +247,39 @@ void turn(int angle){
   }
   release();
   */
+  return true;
 }
 
-void leftTurn(int angle){
+boolean leftTurn(int angle){
   turn(-angle);
+  return true;
 }
 
-void rightTurn(int angle){
+boolean rightTurn(int angle){
   turn(angle);
+  return true;
 }
 
-void pause(){
+boolean pause(){
   running = false;
   Serial.println("PAUSE");
+  return true;
 }
 
-void play(){
+boolean play(){
   running = true;
   Serial.println("PLAY");
+  return true;
 }
 
-void clearBuffer(){
+boolean clearBuffer(){
   Serial.println("CLEAR");
+  return true;
 }
 
-void ping(){
+boolean ping(){
   Serial.println("PONG");
+  return true;
 }
 
 
