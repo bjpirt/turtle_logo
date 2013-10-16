@@ -3,7 +3,7 @@
 // COMMAND_COUNT specifies how many user commands we are going to be able to hold - you can reduce this to save memory
 #define COMMAND_COUNT  12
 #define INPUT_BUFFER_LENGTH 20
-#define CMD_STACK_SIZE 100
+#define CMD_STACK_SIZE 80
 #define SUBROUTINE_STACK_DEPTH 10
 // Define the different types of results
 #define INTEGER_TYPE    1
@@ -18,6 +18,7 @@ typedef void (* fp) (void);
 struct UserCmd {
   const char *cmd;
   byte type;
+  boolean meta;
   fp fn;
 };
 
@@ -37,7 +38,7 @@ byte input_buffer_pos = 0;
 byte cmd_write_pos = 0;
 byte cmd_read_pos = 0;
 boolean running = false;
-char subroutine_pos = -1;
+byte subroutine_pos = -1;
 
 UserCmd user_cmds[COMMAND_COUNT];
 Command cmd_stack[CMD_STACK_SIZE];
@@ -64,13 +65,14 @@ void processInput(){
 }
 
 // This allows you to register a callback funtion
-void addUserCmd(char* cmd, byte type, void (* fn) (void)){
+void addUserCmd(char* cmd, byte type, boolean meta, void (* fn) (void)){
   if (fn_counter == COMMAND_COUNT) {
     Serial.println("Too many commands defined");
     return;
   }
   user_cmds[fn_counter].cmd = cmd;
   user_cmds[fn_counter].type = type;
+  user_cmds[fn_counter].meta = meta;
   user_cmds[fn_counter].fn = fn;
   fn_counter++;
 }
@@ -120,11 +122,17 @@ int _extractIntArg(char *buffer){
 void _storeCmd(char *buffer){
   char cmd = _extractCmd(input_buffer);
   if(cmd < 0){ return; }
-  cmd_stack[cmd_write_pos].cmd = _extractCmd(buffer);
-  if(user_cmds[cmd].type == INTEGER_TYPE || user_cmds[cmd].type == REPEAT_TYPE){
-    cmd_stack[cmd_write_pos].arg = _extractIntArg(buffer);
+  if(user_cmds[cmd].meta){
+    Serial.println("META");
+    ((void (*)(int))user_cmds[cmd].fn)(0);
+  }else{
+    Serial.println("NOMETA");
+    cmd_stack[cmd_write_pos].cmd = _extractCmd(buffer);
+    if(user_cmds[cmd].type == INTEGER_TYPE || user_cmds[cmd].type == REPEAT_TYPE){
+      cmd_stack[cmd_write_pos].arg = _extractIntArg(buffer);
+    }
+    cmd_write_pos++;
   }
-  cmd_write_pos++;
 }
 
 void processNextCmd(){
@@ -257,7 +265,7 @@ void ping(){
 void setup(){
   
   Serial.begin(115200);           // set up Serial library at 11520 bps
-  Serial.println("Stepper test!");
+  Serial.println("LOGO test!");
   
   //set up the steppers
   //motor1.setSpeed(50);  // 300 rpm
@@ -265,21 +273,21 @@ void setup(){
   
   //set up the servo
   //myservo.attach(10);
-  penDown();
+  //penDown();
   
   //add the commands
-  addUserCmd("FORWARD", INTEGER_TYPE, (fp) &forward);
-  addUserCmd("BACK", INTEGER_TYPE, (fp) &backward);
-  addUserCmd("PENDOWN", NO_TYPE, (fp) &penDown);
-  addUserCmd("PENUP", NO_TYPE, (fp) &penUp);
-  addUserCmd("TURNLEFT", INTEGER_TYPE, (fp) &leftTurn);
-  addUserCmd("TURNRIGHT", INTEGER_TYPE, (fp) &rightTurn);
-  addUserCmd("PAUSE", NO_TYPE, (fp) &pause);
-  addUserCmd("PLAY", NO_TYPE, (fp) &play);
-  addUserCmd("CLEAR", NO_TYPE, (fp) &clearBuffer);
-  addUserCmd("PING", NO_TYPE, (fp) &ping);
-  addUserCmd("REPEAT", REPEAT_TYPE, 0);
-  addUserCmd("]", END_REPEAT_TYPE, 0);
+  addUserCmd("FORWARD", INTEGER_TYPE, false, (fp) &forward);
+  addUserCmd("BACK", INTEGER_TYPE, false, (fp) &backward);
+  addUserCmd("PENDOWN", NO_TYPE, false, (fp) &penDown);
+  addUserCmd("PENUP", NO_TYPE, false, (fp) &penUp);
+  addUserCmd("TURNLEFT", INTEGER_TYPE, false, (fp) &leftTurn);
+  addUserCmd("TURNRIGHT", INTEGER_TYPE, false, (fp) &rightTurn);
+  addUserCmd("PAUSE", NO_TYPE, true, (fp) &pause);
+  addUserCmd("PLAY", NO_TYPE, true, (fp) &play);
+  addUserCmd("CLEAR", NO_TYPE, true, (fp) &clearBuffer);
+  addUserCmd("PING", NO_TYPE, true, (fp) &ping);
+  addUserCmd("REPEAT", REPEAT_TYPE, false, 0);
+  addUserCmd("]", END_REPEAT_TYPE, false, 0);
 }
 
 void loop() {
