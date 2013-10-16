@@ -39,6 +39,7 @@ byte cmd_write_pos = 0;
 byte cmd_read_pos = 0;
 boolean running = false;
 byte subroutine_pos = -1;
+byte nest_level = 0;
 
 UserCmd user_cmds[COMMAND_COUNT];
 Command cmd_stack[CMD_STACK_SIZE];
@@ -121,12 +122,24 @@ int _extractIntArg(char *buffer){
 
 void _storeCmd(char *buffer){
   char cmd = _extractCmd(input_buffer);
-  if(cmd < 0){ return; }
+  if(cmd < 0){
+    Serial.println("Syntax error: unknown command");
+    return;
+  }
   if(user_cmds[cmd].meta){
-    Serial.println("META");
     ((void (*)(int))user_cmds[cmd].fn)(0);
   }else{
-    Serial.println("NOMETA");
+    if (user_cmds[cmd].type == REPEAT_TYPE) {
+      // Increment the nesting level counter
+      nest_level++;
+    } else if (user_cmds[cmd].type == END_REPEAT_TYPE) {
+      // Decrement the nesting level counter
+      if (nest_level == 0){
+        Serial.println("Syntax error: closing unopened subroutine");
+        return;
+      }
+      nest_level--;
+    }
     cmd_stack[cmd_write_pos].cmd = _extractCmd(buffer);
     if(user_cmds[cmd].type == INTEGER_TYPE || user_cmds[cmd].type == REPEAT_TYPE){
       cmd_stack[cmd_write_pos].arg = _extractIntArg(buffer);
@@ -144,7 +157,7 @@ void processNextCmd(){
     // if it's a repeat, enter another level in the stack
     subroutine_pos++;
     if(subroutine_pos >= SUBROUTINE_STACK_DEPTH){
-      Serial.println("Too deep a stack");
+      Serial.println("Program error: stack too deep");
     }else{
       subroutine_stack[subroutine_pos].pos = cmd_read_pos;
       subroutine_stack[subroutine_pos].loops_remaining = cmd_stack[cmd_read_pos].arg - 1;
